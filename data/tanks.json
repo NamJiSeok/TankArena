@@ -1,0 +1,113 @@
+{
+  "defaultTankTypeId": "standard",
+  "types": [
+    {
+      "id": "standard",
+      "name": "표준 전차",
+      "description": "체력, 공격력, 속도가 균형 잡힌 기본 전차입니다.",
+      "image": "/resource/tank.png",
+      "stats": {
+        "maxHealth": 100,
+        "maxShield": 70,
+        "acceleration": 0.34,
+        "maxSpeed": 5.2,
+        "meleeDamage": 25,
+        "rangedDamage": 17,
+        "specialDamage": 46,
+        "defense": 0.15
+      },
+      "cooldowns": {
+        "melee": 650,
+        "ranged": 820,
+        "special": 6500
+      },
+      "projectile": {
+        "rangedSpeed": 13,
+        "rangedRadius": 10,
+        "rangedTtl": 54,
+        "specialSpeed": 10,
+        "specialRadius": 24,
+        "specialTtl": 76
+      },
+      "melee": {
+        "totalTicks": 14,
+        "extendTicks": 7,
+        "baseOffset": 52,
+        "extension": 82,
+        "hitRadius": 44
+      }
+    },
+    {
+      "id": "scout",
+      "name": "기동 전차",
+      "description": "체력은 낮지만 빠르게 접근하고 빠르게 빠지는 전차입니다.",
+      "image": "/resource/tank.png",
+      "stats": {
+        "maxHealth": 82,
+        "maxShield": 54,
+        "acceleration": 0.47,
+        "maxSpeed": 6.8,
+        "meleeDamage": 21,
+        "rangedDamage": 14,
+        "specialDamage": 38,
+        "defense": 0.08
+      },
+      "cooldowns": {
+        "melee": 520,
+        "ranged": 720,
+        "special": 5600
+      },
+      "projectile": {
+        "rangedSpeed": 15,
+        "rangedRadius": 9,
+        "rangedTtl": 50,
+        "specialSpeed": 12,
+        "specialRadius": 20,
+        "specialTtl": 68
+      },
+      "melee": {
+        "totalTicks": 12,
+        "extendTicks": 6,
+        "baseOffset": 50,
+        "extension": 88,
+        "hitRadius": 40
+      }
+    },
+    {
+      "id": "guardian",
+      "name": "중장 전차",
+      "description": "느리지만 높은 체력과 방어력으로 버티는 전차입니다.",
+      "image": "/resource/tank.png",
+      "stats": {
+        "maxHealth": 132,
+        "maxShield": 92,
+        "acceleration": 0.24,
+        "maxSpeed": 4.2,
+        "meleeDamage": 31,
+        "rangedDamage": 20,
+        "specialDamage": 54,
+        "defense": 0.24
+      },
+      "cooldowns": {
+        "melee": 760,
+        "ranged": 980,
+        "special": 7600
+      },
+      "projectile": {
+        "rangedSpeed": 11,
+        "rangedRadius": 12,
+        "rangedTtl": 58,
+        "specialSpeed": 8,
+        "specialRadius": 28,
+        "specialTtl": 84
+      },
+      "melee": {
+        "totalTicks": 16,
+        "extendTicks": 8,
+        "baseOffset": 54,
+        "extension": 78,
+        "hitRadius": 48
+      }
+    }
+  ]
+}

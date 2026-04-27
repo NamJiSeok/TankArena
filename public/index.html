@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tank Arena</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <section id="loginView" class="panel view active" aria-labelledby="loginTitle">
+        <div class="brand">
+          <img src="/resource/tank.png" alt="" />
+          <div>
+            <h1 id="loginTitle">Tank Arena</h1>
+            <p>탑뷰 2D 전차 전투</p>
+          </div>
+        </div>
+        <form id="loginForm" class="stack">
+          <label>
+            닉네임
+            <input id="nameInput" maxlength="16" autocomplete="off" placeholder="전차장 이름" required />
+          </label>
+          <button type="submit">접속</button>
+        </form>
+      </section>
+
+      <section id="lobbyView" class="view lobby" aria-labelledby="lobbyTitle">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Lobby</p>
+            <h2 id="lobbyTitle">게임 로비</h2>
+          </div>
+          <strong id="profileName"></strong>
+        </header>
+
+        <div class="layout">
+          <aside class="panel stack">
+            <h3>방 생성</h3>
+            <form id="createRoomForm" class="stack">
+              <label>
+                방 이름
+                <input id="roomNameInput" maxlength="22" autocomplete="off" placeholder="새 전장" />
+              </label>
+              <button type="submit">방 만들기</button>
+            </form>
+          </aside>
+
+          <section class="panel rooms">
+            <div class="sectionTitle">
+              <h3>참가 가능한 방</h3>
+              <button id="refreshRoomsButton" type="button" class="ghost">새로고침</button>
+            </div>
+            <div id="roomsList" class="roomsList"></div>
+          </section>
+
+          <section class="panel chatPanel" aria-labelledby="lobbyChatTitle">
+            <div class="sectionTitle">
+              <h3 id="lobbyChatTitle">로비 채팅</h3>
+            </div>
+            <div id="lobbyChatMessages" class="chatMessages"></div>
+            <form id="lobbyChatForm" class="chatForm">
+              <input id="lobbyChatInput" maxlength="180" autocomplete="off" placeholder="메시지 입력" />
+              <button type="submit">전송</button>
+            </form>
+          </section>
+        </div>
+      </section>
+
+      <section id="roomView" class="view room" aria-labelledby="roomTitle">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Room</p>
+            <h2 id="roomTitle">대기실</h2>
+            <p id="roomMeta"></p>
+          </div>
+          <button id="leaveRoomButton" type="button" class="ghost">나가기</button>
+        </header>
+
+        <div class="layout">
+          <section class="panel playersPanel">
+            <div class="sectionTitle">
+              <h3>참가 인원</h3>
+              <span id="roomCount"></span>
+            </div>
+            <div id="playersList" class="playersList"></div>
+          </section>
+
+          <aside class="panel stack">
+            <div class="stack">
+              <h3>전차 선택</h3>
+              <label>
+                전차 종류
+                <select id="roomTankTypeSelect"></select>
+              </label>
+              <div id="roomTankStats" class="tankStats"></div>
+            </div>
+            <h3>준비</h3>
+            <button id="readyButton" type="button">레디</button>
+            <button id="startButton" type="button" class="secondary">게임 시작</button>
+            <p id="roomHint" class="hint"></p>
+          </aside>
+
+          <section class="panel chatPanel" aria-labelledby="roomChatTitle">
+            <div class="sectionTitle">
+              <h3 id="roomChatTitle">방 채팅</h3>
+            </div>
+            <div id="roomChatMessages" class="chatMessages"></div>
+            <form id="roomChatForm" class="chatForm">
+              <input id="roomChatInput" maxlength="180" autocomplete="off" placeholder="메시지 입력" />
+              <button type="submit">전송</button>
+            </form>
+          </section>
+        </div>
+      </section>
+
+      <section id="gameView" class="view game" aria-label="전투 화면">
+        <canvas id="gameCanvas"></canvas>
+        <div class="hud topLeft">
+          <strong id="hudName"></strong>
+          <div class="meter">
+            <span>체력</span>
+            <b id="healthBar"></b>
+          </div>
+          <div class="meter shield">
+            <span>보호막</span>
+            <b id="shieldBar"></b>
+          </div>
+        </div>
+        <div class="hud topRight">
+          <button id="exitGameButton" type="button" class="ghost">나가기</button>
+        </div>
+        <div id="cooldowns" class="hud cooldowns"></div>
+        <div id="gameChat" class="hud gameChat">
+          <div id="gameChatMessages" class="chatMessages compact"></div>
+          <form id="gameChatForm" class="chatForm">
+            <input id="gameChatInput" maxlength="180" autocomplete="off" placeholder="방 채팅" />
+            <button type="submit">전송</button>
+          </form>
+        </div>
+        <div id="centerNotice" class="centerNotice"></div>
+      </section>
+    </main>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script src="/client.js" defer></script>
+  </body>
+</html>
