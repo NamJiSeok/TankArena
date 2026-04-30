@@ -450,7 +450,8 @@ function startGame(client) {
     return;
   }
 
-  if (!players.every((player) => player.ready)) {
+  const nonOwners = players.filter((p) => p.id !== room.ownerId);
+  if (nonOwners.length === 0 || !nonOwners.every((player) => player.ready)) {
     send(client, "error", { message: "모든 인원이 레디해야 시작할 수 있습니다." });
     return;
   }
@@ -632,7 +633,9 @@ function updateProjectiles(room) {
   for (const projectile of room.projectiles) {
     projectile.x += projectile.vx;
     projectile.y += projectile.vy;
-    projectile.ttl -= 1;
+    if (projectile.kind !== "ranged") {
+      projectile.ttl -= 1;
+    }
 
     if (
       projectile.x < 0 ||
@@ -892,6 +895,9 @@ function sendLobby(client) {
 function lobbySnapshot() {
   return {
     tankTypes: tankTypeSummaries(),
+    users: [...clients.values()]
+      .filter((c) => c.name)
+      .map((c) => ({ id: c.id, name: c.name, inRoom: !!c.roomId })),
     rooms: [...rooms.values()].map((room) => ({
       id: room.id,
       name: room.name,

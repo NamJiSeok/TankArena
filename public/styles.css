@@ -194,6 +194,13 @@ p {
   max-width: 1180px;
 }
 
+.topbarActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
 .topbar h2 {
   font-size: clamp(1.8rem, 4vw, 3.2rem);
 }
@@ -208,11 +215,19 @@ p {
 
 .layout {
   display: grid;
-  grid-template-columns: minmax(260px, 320px) 1fr;
   gap: 20px;
-  max-width: 1180px;
+  max-width: 1380px;
   margin: 0 auto;
   align-items: start;
+}
+
+.lobby-layout {
+  grid-template-columns: minmax(220px, 280px) 1fr minmax(180px, 220px);
+}
+
+.room-layout {
+  grid-template-columns: minmax(260px, 320px) 1fr;
+  align-items: stretch;
 }
 
 .layout > .panel {
@@ -222,6 +237,189 @@ p {
 .chatPanel {
   grid-column: 1 / -1;
 }
+
+.room-layout .chatPanel {
+  grid-column: auto;
+}
+
+.onlineUsersList {
+  display: grid;
+  gap: 6px;
+}
+
+.onlineUserItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel-strong);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.onlineUserItem .userStatus {
+  font-size: 0.76rem;
+  font-weight: 900;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.onlineUserItem .userStatus.inRoom {
+  color: var(--green);
+}
+
+.roomRight {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.roomRight .chatPanel {
+  flex: 1;
+}
+
+.roomFooter {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.roomFooter > .panel {
+  padding: 20px;
+}
+
+.tankPreviewCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: box-shadow 120ms ease;
+}
+
+.tankPreviewCard:hover {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.tankPreviewCard img {
+  max-height: 90px;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.tankPreviewCard strong {
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.tankPreviewCard small {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.roomActions {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+}
+
+.tankModal {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background: rgba(0, 0, 0, 0.56);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 80px 16px 32px;
+  overflow-y: auto;
+  backdrop-filter: blur(4px);
+}
+
+.tankModal[hidden] {
+  display: none;
+}
+
+.tankModalContent {
+  width: min(640px, 100%);
+  padding: 24px;
+}
+
+.tankModalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tankGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.tankCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 12px;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-strong);
+  cursor: pointer;
+  text-align: center;
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+  width: 100%;
+  min-height: 44px;
+}
+
+.tankCard:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.tankCard.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(194, 59, 50, 0.18);
+  background: #fff8f7;
+}
+
+.tankCard img {
+  max-height: 80px;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.tankCard span {
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: var(--ink);
+}
+
+.tankCard:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tankModalFooter {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.tankModalFooter button {
+  min-width: 88px;
+}
+
 
 .sectionTitle {
   display: flex;
@@ -248,6 +446,15 @@ p {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   color: var(--ink);
+}
+
+.tankPreviewImage {
+  grid-column: 1 / -1;
+  width: 100%;
+  max-height: 160px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: var(--surface, #1a1a2e);
 }
 
 .tankStats p {
@@ -531,6 +738,28 @@ p {
   display: none;
 }
 
+.spectateNotice {
+  position: fixed;
+  z-index: 4;
+  left: 50%;
+  top: 24px;
+  transform: translateX(-50%);
+  border-radius: 8px;
+  background: rgba(16, 19, 23, 0.78);
+  color: #fff;
+  padding: 10px 20px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.spectateNotice:empty {
+  display: none;
+}
+
 .toast {
   position: fixed;
   left: 50%;
@@ -591,6 +820,10 @@ p {
 
   .cooldown {
     width: 60px;
+  }
+
+  .roomFooter {
+    grid-template-columns: 1fr;
   }
 
   .tankStats {

@@ -19,10 +19,14 @@ const state = {
     right: false
   },
   lastInputJson: "",
-  meleeImageLoaded: false
+  meleeImageLoaded: false,
+  spectateIndex: 0
 };
 
+let pendingTankTypeId = "";
+
 const imageCache = new Map();
+const silhouetteCache = new Map();
 
 const meleeImage = new Image();
 meleeImage.src = "/resource/Melee%20Attack.png";
@@ -46,10 +50,15 @@ const el = {
   roomMeta: document.querySelector("#roomMeta"),
   roomCount: document.querySelector("#roomCount"),
   playersList: document.querySelector("#playersList"),
-  roomTankTypeSelect: document.querySelector("#roomTankTypeSelect"),
   roomTankStats: document.querySelector("#roomTankStats"),
   readyButton: document.querySelector("#readyButton"),
   startButton: document.querySelector("#startButton"),
+  tankSelectModal: document.querySelector("#tankSelectModal"),
+  tankModalClose: document.querySelector("#tankModalClose"),
+  tankGrid: document.querySelector("#tankGrid"),
+  tankConfirmButton: document.querySelector("#tankConfirmButton"),
+  tankCancelButton: document.querySelector("#tankCancelButton"),
+  tankPreview: document.querySelector("#tankPreview"),
   leaveRoomButton: document.querySelector("#leaveRoomButton"),
   roomHint: document.querySelector("#roomHint"),
   gameCanvas: document.querySelector("#gameCanvas"),
@@ -58,6 +67,7 @@ const el = {
   shieldBar: document.querySelector("#shieldBar"),
   cooldowns: document.querySelector("#cooldowns"),
   centerNotice: document.querySelector("#centerNotice"),
+  spectateNotice: document.querySelector("#spectateNotice"),
   exitGameButton: document.querySelector("#exitGameButton"),
   lobbyChatForm: document.querySelector("#lobbyChatForm"),
   lobbyChatInput: document.querySelector("#lobbyChatInput"),
@@ -68,6 +78,8 @@ const el = {
   gameChatForm: document.querySelector("#gameChatForm"),
   gameChatInput: document.querySelector("#gameChatInput"),
   gameChatMessages: document.querySelector("#gameChatMessages"),
+  onlineCount: document.querySelector("#onlineCount"),
+  onlineUsersList: document.querySelector("#onlineUsersList"),
   toast: document.querySelector("#toast")
 };
 
@@ -122,8 +134,38 @@ function bindUi() {
     send("listRooms");
   });
 
-  el.roomTankTypeSelect.addEventListener("change", () => {
-    selectTankType(el.roomTankTypeSelect.value);
+  el.tankPreview.addEventListener("click", () => {
+    pendingTankTypeId = state.selectedTankTypeId;
+    renderTankGrid();
+    renderTankStats(el.roomTankStats, pendingTankTypeId);
+    el.tankSelectModal.hidden = false;
+  });
+
+  el.tankGrid.addEventListener("click", (event) => {
+    const card = event.target.closest(".tankCard");
+    if (!card || card.disabled) return;
+    pendingTankTypeId = card.dataset.tankId;
+    renderTankGrid();
+    renderTankStats(el.roomTankStats, pendingTankTypeId);
+  });
+
+  el.tankModalClose.addEventListener("click", () => {
+    el.tankSelectModal.hidden = true;
+  });
+
+  el.tankCancelButton.addEventListener("click", () => {
+    el.tankSelectModal.hidden = true;
+  });
+
+  el.tankConfirmButton.addEventListener("click", () => {
+    selectTankType(pendingTankTypeId);
+    el.tankSelectModal.hidden = true;
+  });
+
+  el.tankSelectModal.addEventListener("click", (event) => {
+    if (event.target === el.tankSelectModal) {
+      el.tankSelectModal.hidden = true;
+    }
   });
 
   el.readyButton.addEventListener("click", () => {
@@ -204,7 +246,11 @@ function handleServerMessage(type, data) {
     }
   }
   if (type === "gameState") {
+    const wasPlaying = state.game?.status === "playing";
     state.game = data;
+    if (data.status === "playing" && !wasPlaying) {
+      state.spectateIndex = 0;
+    }
     if (data.status === "playing" || state.screen === "game") {
       showView("game");
     }
@@ -234,10 +280,13 @@ function showView(name) {
 
   if (name !== "game") {
     el.centerNotice.textContent = "";
+    el.spectateNotice.textContent = "";
   }
 }
 
 function renderLobby() {
+  renderOnlineUsers();
+
   if (!state.lobby.rooms.length) {
     el.roomsList.innerHTML = `<div class="empty">열린 방이 없습니다.</div>`;
     return;
@@ -265,6 +314,32 @@ function renderLobby() {
   }
 }
 
+function renderOnlineUsers() {
+  const users = state.lobby.users || [];
+  el.onlineCount.textContent = `${users.length}명`;
+  el.onlineUsersList.innerHTML = "";
+
+  if (!users.length) {
+    el.onlineUsersList.innerHTML = `<div class="empty">접속 중인 인원이 없습니다.</div>`;
+    return;
+  }
+
+  for (const user of users) {
+    const item = document.createElement("div");
+    item.className = "onlineUserItem";
+
+    const name = document.createElement("span");
+    name.textContent = user.name;
+
+    const status = document.createElement("span");
+    status.className = "userStatus" + (user.inRoom ? " inRoom" : "");
+    status.textContent = user.inRoom ? "게임 중" : "로비";
+
+    item.append(name, status);
+    el.onlineUsersList.append(item);
+  }
+}
+
 function renderRoom() {
   if (!state.room) {
     return;
@@ -272,14 +347,19 @@ function renderRoom() {
 
   const isOwner = state.room.ownerId === state.clientId;
   const me = currentRoomPlayer();
-  const allReady = state.room.players.length > 0 && state.room.players.every((player) => player.ready);
+  const nonOwners = state.room.players.filter((p) => !p.owner);
+  const allReady = nonOwners.length > 0 && nonOwners.every((p) => p.ready);
 
   el.roomTitle.textContent = state.room.name;
   el.roomMeta.textContent = `${state.room.ownerName}의 방 · ${statusLabel(state.room.status)}`;
   el.roomCount.textContent = `${state.room.players.length}/10`;
+
+  el.readyButton.hidden = isOwner;
   el.readyButton.textContent = me?.ready ? "레디 취소" : "레디";
-  el.roomTankTypeSelect.disabled = state.room.status !== "waiting";
-  el.startButton.disabled = !isOwner || !allReady || state.room.players.length < 2 || state.room.status !== "waiting";
+
+  el.startButton.hidden = !isOwner;
+  el.startButton.disabled = !allReady || state.room.players.length < 2 || state.room.status !== "waiting";
+
   el.roomHint.textContent = isOwner
     ? "모든 인원이 레디하면 시작할 수 있습니다."
     : "레디 후 방장의 시작을 기다립니다.";
@@ -338,8 +418,14 @@ function renderHud() {
   }
 
   if (!tank.alive && state.game?.status === "playing") {
-    el.centerNotice.textContent = "파괴됨 · 남은 전투 관전 중";
+    const aliveTanks = state.game.tanks.filter((t) => t.alive);
+    const spectated = aliveTanks[Math.min(state.spectateIndex, aliveTanks.length - 1)];
+    el.spectateNotice.textContent = spectated
+      ? `👁 ${spectated.name} 관전 중  ·  Z키로 전환`
+      : "관전 중";
+    el.centerNotice.textContent = "";
   } else if (state.game?.status === "playing") {
+    el.spectateNotice.textContent = "";
     el.centerNotice.textContent = "";
   }
 }
@@ -361,32 +447,72 @@ function updateTankCatalog(tankTypes, selectedTankTypeId) {
 }
 
 function renderTankSelectors() {
-  renderTankSelect(el.roomTankTypeSelect);
-  renderTankStats(el.roomTankStats);
+  renderTankPreview();
 }
 
-function renderTankSelect(select) {
-  if (!select) {
-    return;
-  }
-
-  select.innerHTML = "";
-  for (const tankType of state.tankTypes) {
-    const option = document.createElement("option");
-    option.value = tankType.id;
-    option.textContent = tankType.name;
-    select.append(option);
-  }
-
-  select.value = state.selectedTankTypeId;
-}
-
-function renderTankStats(container) {
-  if (!container) {
+function renderTankPreview() {
+  if (!el.tankPreview) {
     return;
   }
 
   const tankType = tankTypeById(state.selectedTankTypeId);
+  el.tankPreview.innerHTML = "";
+  if (!tankType) {
+    return;
+  }
+
+  if (tankType.image) {
+    const img = document.createElement("img");
+    img.src = tankType.image;
+    img.alt = tankType.name;
+    el.tankPreview.append(img);
+  }
+
+  const name = document.createElement("strong");
+  name.textContent = tankType.name;
+  el.tankPreview.append(name);
+
+  const hint = document.createElement("small");
+  hint.textContent = "클릭하여 전차 변경";
+  el.tankPreview.append(hint);
+}
+
+function renderTankGrid() {
+  if (!el.tankGrid) {
+    return;
+  }
+
+  const canChange = !state.room || state.room.status === "waiting";
+  el.tankGrid.innerHTML = "";
+
+  for (const tankType of state.tankTypes) {
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = "tankCard" + (tankType.id === pendingTankTypeId ? " selected" : "");
+    card.disabled = !canChange;
+    card.dataset.tankId = tankType.id;
+
+    if (tankType.image) {
+      const img = document.createElement("img");
+      img.src = tankType.image;
+      img.alt = tankType.name;
+      card.append(img);
+    }
+
+    const name = document.createElement("span");
+    name.textContent = tankType.name;
+    card.append(name);
+
+    el.tankGrid.append(card);
+  }
+}
+
+function renderTankStats(container, tankTypeId) {
+  if (!container) {
+    return;
+  }
+
+  const tankType = tankTypeById(tankTypeId || state.selectedTankTypeId);
   container.innerHTML = "";
   if (!tankType) {
     return;
@@ -482,14 +608,57 @@ function getImage(src) {
   if (!imageCache.has(src)) {
     const image = new Image();
     image.loaded = false;
+    image.trimBounds = null;
     image.onload = () => {
       image.loaded = true;
+      image.trimBounds = computeTrimBounds(image);
     };
     image.src = src;
     imageCache.set(src, image);
   }
 
   return imageCache.get(src);
+}
+
+function computeTrimBounds(image) {
+  const canvas = new OffscreenCanvas(image.naturalWidth, image.naturalHeight);
+  const imgCtx = canvas.getContext("2d");
+  imgCtx.drawImage(image, 0, 0);
+  const { data } = imgCtx.getImageData(0, 0, canvas.width, canvas.height);
+
+  let minX = canvas.width, minY = canvas.height, maxX = 0, maxY = 0;
+  for (let y = 0; y < canvas.height; y++) {
+    for (let x = 0; x < canvas.width; x++) {
+      if (data[(y * canvas.width + x) * 4 + 3] > 8) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+
+  if (minX > maxX || minY > maxY) {
+    return { x: 0, y: 0, w: canvas.width, h: canvas.height };
+  }
+
+  return { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 };
+}
+
+function getSilhouette(image, color) {
+  const key = `${image.src}::${color}`;
+  if (silhouetteCache.has(key)) {
+    return silhouetteCache.get(key);
+  }
+
+  const canvas = new OffscreenCanvas(image.naturalWidth, image.naturalHeight);
+  const imgCtx = canvas.getContext("2d");
+  imgCtx.fillStyle = color;
+  imgCtx.fillRect(0, 0, canvas.width, canvas.height);
+  imgCtx.globalCompositeOperation = "destination-in";
+  imgCtx.drawImage(image, 0, 0);
+  silhouetteCache.set(key, canvas);
+  return canvas;
 }
 
 function formatChatTime(timestamp) {
@@ -580,16 +749,14 @@ function drawTanks(camera) {
     ctx.rotate(tank.angle + Math.PI / 2);
     ctx.globalAlpha = tank.alive ? 1 : 0.36;
 
-    ctx.fillStyle = tank.color;
-    ctx.strokeStyle = "#111";
-    ctx.lineWidth = 4;
-    roundRect(ctx, -34, -40, 68, 82, 8);
-    ctx.fill();
-    ctx.stroke();
-
     const tankImage = getImage(tank.image || "/resource/tank.png");
-    if (tankImage.loaded) {
-      ctx.drawImage(tankImage, -30, -36, 60, 72);
+    if (tankImage.loaded && tankImage.trimBounds) {
+      const b = tankImage.trimBounds;
+      const isMe = tank.id === state.clientId;
+      const outlineColor = isMe ? "#22c55e" : "#ef4444";
+      const silhouette = getSilhouette(tankImage, outlineColor);
+      ctx.drawImage(silhouette, b.x, b.y, b.w, b.h, -33, -39, 66, 78);
+      ctx.drawImage(tankImage, b.x, b.y, b.w, b.h, -30, -36, 60, 72);
     }
 
     ctx.restore();
@@ -667,7 +834,10 @@ function drawMinimap() {
   ctx.stroke();
 
   for (const tank of state.game.tanks) {
-    ctx.fillStyle = tank.alive ? tank.color : "rgba(255,255,255,0.35)";
+    const isMe = tank.id === state.clientId;
+    ctx.fillStyle = tank.alive
+      ? (isMe ? "#22c55e" : "#ef4444")
+      : "rgba(255,255,255,0.35)";
     ctx.beginPath();
     ctx.arc(
       x + (tank.x / state.game.map.width) * mapW,
@@ -700,19 +870,17 @@ function roundRect(context, x, y, width, height, radius) {
 
 function cameraTarget() {
   const mine = myTank();
-  if (mine) {
+  if (mine?.alive) {
     return mine;
   }
 
-  const alive = state.game.tanks.find((tank) => tank.alive);
-  if (alive) {
-    return alive;
+  const aliveTanks = (state.game?.tanks || []).filter((t) => t.alive);
+  if (!aliveTanks.length) {
+    return { x: state.game.map.width / 2, y: state.game.map.height / 2 };
   }
 
-  return {
-    x: state.game.map.width / 2,
-    y: state.game.map.height / 2
-  };
+  state.spectateIndex = Math.min(state.spectateIndex, aliveTanks.length - 1);
+  return aliveTanks[state.spectateIndex];
 }
 
 function myTank() {
@@ -744,7 +912,17 @@ function onKeyChange(event) {
   }
 
   if (key === "KeyZ") {
-    state.keys.forward = active;
+    const mine = myTank();
+    if (!mine?.alive && active && !event.repeat) {
+      const aliveTanks = (state.game?.tanks || []).filter((t) => t.alive);
+      if (aliveTanks.length > 0) {
+        state.spectateIndex = (state.spectateIndex + 1) % aliveTanks.length;
+        const spectated = aliveTanks[state.spectateIndex];
+        el.spectateNotice.textContent = `👁 ${spectated.name} 관전 중  ·  Z키로 전환`;
+      }
+    } else if (mine?.alive) {
+      state.keys.forward = active;
+    }
   }
   if (key === "KeyX") {
     state.keys.brake = active;

@@ -5,7 +5,7 @@
       "id": "standard",
       "name": "표준 전차",
       "description": "체력, 공격력, 속도가 균형 잡힌 기본 전차입니다.",
-      "image": "/resource/tank.png",
+      "image": "/resource/tank_green.png",
       "stats": {
         "maxHealth": 100,
         "maxShield": 70,
@@ -41,7 +41,7 @@
       "id": "scout",
       "name": "기동 전차",
       "description": "체력은 낮지만 빠르게 접근하고 빠르게 빠지는 전차입니다.",
-      "image": "/resource/tank.png",
+      "image": "/resource/tank_yellow.png",
       "stats": {
         "maxHealth": 82,
         "maxShield": 54,
@@ -77,7 +77,7 @@
       "id": "guardian",
       "name": "중장 전차",
       "description": "느리지만 높은 체력과 방어력으로 버티는 전차입니다.",
-      "image": "/resource/tank.png",
+      "image": "/resource/tank_gray.png",
       "stats": {
         "maxHealth": 132,
         "maxShield": 92,
